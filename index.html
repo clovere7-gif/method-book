@@ -9,7 +9,7 @@
 <meta name="theme-color" content="#7A2E24">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=Dancing+Script:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -20,11 +20,7 @@
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <div class="sidebar-title">
-        <svg class="seal-mini" viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="12" r="9" fill="var(--wax)"/>
-          <path d="M12 7v10M7 12h10" stroke="#fff" stroke-width="1.3" opacity=".6"/>
-        </svg>
-        <span class="serif">실험 노트</span>
+        <span class="cursive">Bible</span>
       </div>
       <div class="search-box">
         <input type="text" id="searchInput" placeholder="기록 검색...">
@@ -34,6 +30,10 @@
 
     <div class="entry-list" id="entryList"></div>
 
+    <div class="sidebar-footer">
+      <button class="theme-toggle" id="themeToggle" title="다크모드 전환"><span class="knob"></span></button>
+      <button class="btn btn-primary" id="newEntryBtn" title="새 기록 시작">+ 새 기록</button>
+    </div>
     <div class="sidebar-footer">
       <button class="icon-btn" id="exportBtn" title="지금까지 기록을 파일로 저장">⭳ 백업</button>
       <button class="icon-btn" id="importBtn" title="백업 파일 불러오기">⭱ 복원</button>
@@ -45,17 +45,6 @@
 
   <!-- ================= 메인 ================= -->
   <main class="main">
-    <div class="topbar">
-      <div class="topbar-left">
-        <button class="btn-ghost" id="sidebarToggle" title="사이드바 접기/펼치기">☰</button>
-        <span class="topbar-title" id="topbarTitle">오늘 뭘 체크해볼까</span>
-      </div>
-      <div class="topbar-actions">
-        <button class="theme-toggle" id="themeToggle" title="다크모드 전환"><span class="knob"></span></button>
-        <button class="btn btn-primary" id="newEntryBtn">+ 새 기록</button>
-      </div>
-    </div>
-
     <div class="content" id="content">
       <!-- 여기 입력모드(quad) 또는 완성카드(page-card) 또는 빈 상태가 렌더링됨 -->
     </div>
@@ -105,6 +94,7 @@
     <div class="seal-slot"></div>
     <div class="page-card-header">
       <div>
+        <div class="page-card-seq" id="cardSeq"></div>
         <div class="page-card-eyebrow" id="cardMethodName"></div>
         <h2 class="page-card-title serif" id="cardTitle"></h2>
       </div>
@@ -131,7 +121,7 @@
     <div class="card-footer-row">
       <label class="status-toggle">
         <input type="checkbox" id="cardDoneToggle">
-        <span id="cardDoneLabel">실행결과를 스프레드시트로 옮겼다면 체크</span>
+        <span id="cardDoneLabel">완료</span>
       </label>
       <button class="btn btn-secondary" id="deleteEntryBtn">이 기록 삭제</button>
     </div>

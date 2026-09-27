@@ -20,7 +20,7 @@
     { id: "content", name: "2. 콘텐츠 서비스", desc: "채널 확보 포함" },
     { id: "product", name: "3. 상품판매", desc: "재고 무관, 상품 거래 당사자" },
     { id: "digital", name: "4. 디지털 서비스", desc: "소프트웨어자동화 포함" },
-    { id: "labor", name: "6. 단순노무제공", desc: "비교 기준점" }
+    { id: "labor", name: "5. 단순노무제공", desc: "비교 기준점" }
   ];
 
   var STORAGE_KEY = "method_book_entries_v1";
@@ -31,10 +31,17 @@
   // ==========================================================================
 
   var state = {
-    entries: [],       // {id, methodId, fact, maeda, categoryIds:[], memo, done, createdAt}
+    entries: [],       // {id, seq, methodId, fact, maeda, categoryIds:[], memo, done, createdAt}
     selectedId: null,
     searchQuery: "",
-    activeTagFilter: null,
+    filters: {
+      methodIds: [],     // 선택된 방법론 id 목록 (빈 배열 = 전체)
+      categoryIds: [],   // 선택된 카테고리 id 목록 (빈 배열 = 전체)
+      dateFrom: "",
+      dateTo: "",
+      done: []          // ["done","undone"] 중 선택된 값들 (빈 배열 = 전체)
+    },
+    sort: { key: "createdAt", dir: "desc" }, // key: 'createdAt' | 'seq', dir: 'asc'|'desc'
     mode: "empty"       // 'empty' | 'quad' | 'card'
   };
 
@@ -49,11 +56,24 @@
       var raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return [];
       var parsed = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed : [];
+      var list = Array.isArray(parsed) ? parsed : [];
+      return migrateSeq(list);
     } catch (e) {
       console.warn("불러오기 실패:", e);
       return [];
     }
+  }
+
+  function migrateSeq(list) {
+    // 과거 데이터(seq 없음)에 생성일시 순서로 번호를 부여
+    var needsSeq = list.some(function (e) { return !e.seq; });
+    if (!needsSeq) return list;
+    var sorted = list.slice().sort(function (a, b) {
+      return (a.createdAt || "").localeCompare(b.createdAt || "") || String(a.id).localeCompare(String(b.id));
+    });
+    var next = 1;
+    sorted.forEach(function (e) { if (!e.seq) e.seq = next; next++; });
+    return list;
   }
 
   function saveEntries() {
@@ -82,7 +102,10 @@
   }
 
   function todayISO() {
-    var d = new Date();
+    return isoFromDate(new Date());
+  }
+
+  function isoFromDate(d) {
     return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
   }
 
@@ -126,28 +149,191 @@
   var elEntryList = $("#entryList");
   var elTagFilters = $("#tagFilters");
   var elSearchInput = $("#searchInput");
-  var elTopbarTitle = $("#topbarTitle");
   var elSidebar = $("#sidebar");
 
   // ==========================================================================
-  // 렌더: 사이드바 태그 필터
+  // 렌더: 사이드바 엑셀 스타일 드롭다운 필터
   // ==========================================================================
 
+  function closeAllFilterDropdowns(exceptEl) {
+    $$(".filter-dropdown-panel.open", elTagFilters).forEach(function (p) {
+      if (p !== exceptEl) p.classList.remove("open");
+    });
+  }
+
+  function filterButtonLabel(name, count, total) {
+    if (count === 0 || count === total) return name;
+    return name + " (" + count + ")";
+  }
+
   function renderTagFilters() {
-    var html = CATEGORIES.map(function (c) {
-      var active = state.activeTagFilter === c.id ? " active" : "";
-      return '<button class="tag-chip' + active + '" data-cat="' + c.id + '">' + escapeHtml(c.name.replace(/^\d+\.\s*/, "")) + "</button>";
-    }).join("");
-    elTagFilters.innerHTML = html;
-    $$("[data-cat]", elTagFilters).forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        var cat = btn.getAttribute("data-cat");
-        state.activeTagFilter = state.activeTagFilter === cat ? null : cat;
+    var methodTotal = METHODS.length;
+    var catTotal = CATEGORIES.length;
+    var doneTotal = 2;
+
+    elTagFilters.innerHTML =
+      renderFilterDropdown("method", "방법론", filterButtonLabel("방법론", state.filters.methodIds.length, methodTotal), state.filters.methodIds.length > 0) +
+      renderFilterDropdown("category", "카테고리", filterButtonLabel("카테고리", state.filters.categoryIds.length, catTotal), state.filters.categoryIds.length > 0) +
+      renderFilterDropdown("date", "날짜", "날짜", !!(state.filters.dateFrom || state.filters.dateTo)) +
+      renderFilterDropdown("seq", "기록번호", "기록번호↕", false) +
+      renderFilterDropdown("done", "완료여부", filterButtonLabel("완료여부", state.filters.done.length, doneTotal), state.filters.done.length > 0);
+
+    setupFilterDropdown("method");
+    setupFilterDropdown("category");
+    setupFilterDropdown("date");
+    setupFilterDropdown("seq");
+    setupFilterDropdown("done");
+  }
+
+  function renderFilterDropdown(key, label, buttonLabel, active) {
+    return '<div class="filter-dropdown" data-filter-key="' + key + '">' +
+      '<button class="filter-dropdown-btn' + (active ? " active" : "") + '" data-filter-btn="' + key + '">' +
+      escapeHtml(buttonLabel) + ' <span class="filter-caret">▾</span></button>' +
+      '<div class="filter-dropdown-panel" data-filter-panel="' + key + '"></div>' +
+      "</div>";
+  }
+
+  function filterPanelBody(key) {
+    if (key === "method") {
+      return METHODS.map(function (m) {
+        var checked = state.filters.methodIds.indexOf(m.id) !== -1;
+        return '<label class="filter-check-row"><input type="checkbox" data-fval="' + m.id + '"' + (checked ? " checked" : "") + '><span>' + escapeHtml(m.name) + "</span></label>";
+      }).join("") + filterPanelFooter("method");
+    }
+    if (key === "category") {
+      return CATEGORIES.map(function (c) {
+        var checked = state.filters.categoryIds.indexOf(c.id) !== -1;
+        return '<label class="filter-check-row"><input type="checkbox" data-fval="' + c.id + '"' + (checked ? " checked" : "") + '><span>' + escapeHtml(c.name) + "</span></label>";
+      }).join("") + filterPanelFooter("category");
+    }
+    if (key === "done") {
+      var opts = [{ id: "done", name: "완료" }, { id: "undone", name: "미완료" }];
+      return opts.map(function (o) {
+        var checked = state.filters.done.indexOf(o.id) !== -1;
+        return '<label class="filter-check-row"><input type="checkbox" data-fval="' + o.id + '"' + (checked ? " checked" : "") + '><span>' + escapeHtml(o.name) + "</span></label>";
+      }).join("") + filterPanelFooter("done");
+    }
+    if (key === "date") {
+      return '<div class="filter-date-body">' +
+        '<label class="filter-date-label">시작일<input type="date" id="filterDateFrom" value="' + escapeHtml(state.filters.dateFrom) + '"></label>' +
+        '<label class="filter-date-label">종료일<input type="date" id="filterDateTo" value="' + escapeHtml(state.filters.dateTo) + '"></label>' +
+        '<div class="filter-date-actions">' +
+        '<button type="button" class="filter-mini-btn" data-date-preset="today">오늘</button>' +
+        '<button type="button" class="filter-mini-btn" data-date-preset="week">이번주</button>' +
+        '<button type="button" class="filter-mini-btn" data-date-preset="month">이번달</button>' +
+        '<button type="button" class="filter-mini-btn" data-date-preset="clear">전체</button>' +
+        "</div></div>";
+    }
+    if (key === "seq") {
+      var isAsc = state.sort.key === "seq" && state.sort.dir === "asc";
+      var isDesc = state.sort.key === "seq" && state.sort.dir === "desc";
+      return '<div class="filter-sort-body">' +
+        '<button type="button" class="filter-mini-btn' + (isAsc ? " active" : "") + '" data-sort-dir="asc">오름차순 (오래된순)</button>' +
+        '<button type="button" class="filter-mini-btn' + (isDesc ? " active" : "") + '" data-sort-dir="desc">내림차순 (최근순)</button>' +
+        "</div>";
+    }
+    return "";
+  }
+
+  function filterPanelFooter(key) {
+    return '<div class="filter-panel-footer"><button type="button" class="filter-mini-btn" data-fclear="' + key + '">전체선택 해제</button></div>';
+  }
+
+  function setupFilterDropdown(key) {
+    var btn = $('[data-filter-btn="' + key + '"]', elTagFilters);
+    var panel = $('[data-filter-panel="' + key + '"]', elTagFilters);
+    if (!btn || !panel) return;
+
+    btn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      var isOpen = panel.classList.contains("open");
+      closeAllFilterDropdowns();
+      if (!isOpen) {
+        panel.innerHTML = filterPanelBody(key);
+        panel.classList.add("open");
+        bindFilterPanelEvents(key, panel);
+      }
+    });
+  }
+
+  function bindFilterPanelEvents(key, panel) {
+    $$("[data-fval]", panel).forEach(function (cb) {
+      cb.addEventListener("change", function () {
+        var val = cb.getAttribute("data-fval");
+        var listKey = key === "method" ? "methodIds" : key === "category" ? "categoryIds" : "done";
+        var list = state.filters[listKey];
+        var idx = list.indexOf(val);
+        if (cb.checked && idx === -1) list.push(val);
+        else if (!cb.checked && idx !== -1) list.splice(idx, 1);
         renderTagFilters();
         renderEntryList();
       });
     });
+
+    var clearBtn = $("[data-fclear]", panel);
+    if (clearBtn) {
+      clearBtn.addEventListener("click", function () {
+        var listKey = key === "method" ? "methodIds" : key === "category" ? "categoryIds" : "done";
+        state.filters[listKey] = [];
+        renderTagFilters();
+        renderEntryList();
+      });
+    }
+
+    if (key === "date") {
+      var fromEl = $("#filterDateFrom", panel);
+      var toEl = $("#filterDateTo", panel);
+      if (fromEl) fromEl.addEventListener("change", function () {
+        state.filters.dateFrom = fromEl.value;
+        renderTagFilters();
+        renderEntryList();
+      });
+      if (toEl) toEl.addEventListener("change", function () {
+        state.filters.dateTo = toEl.value;
+        renderTagFilters();
+        renderEntryList();
+      });
+      $$("[data-date-preset]", panel).forEach(function (b) {
+        b.addEventListener("click", function () {
+          var preset = b.getAttribute("data-date-preset");
+          var today = new Date();
+          if (preset === "today") {
+            var iso = todayISO();
+            state.filters.dateFrom = iso;
+            state.filters.dateTo = iso;
+          } else if (preset === "week") {
+            var day = today.getDay();
+            var monday = new Date(today);
+            monday.setDate(today.getDate() - ((day + 6) % 7));
+            state.filters.dateFrom = isoFromDate(monday);
+            state.filters.dateTo = todayISO();
+          } else if (preset === "month") {
+            var first = new Date(today.getFullYear(), today.getMonth(), 1);
+            state.filters.dateFrom = isoFromDate(first);
+            state.filters.dateTo = todayISO();
+          } else {
+            state.filters.dateFrom = "";
+            state.filters.dateTo = "";
+          }
+          renderTagFilters();
+          renderEntryList();
+        });
+      });
+    }
+
+    if (key === "seq") {
+      $$("[data-sort-dir]", panel).forEach(function (b) {
+        b.addEventListener("click", function () {
+          state.sort.key = "seq";
+          state.sort.dir = b.getAttribute("data-sort-dir");
+          renderTagFilters();
+          renderEntryList();
+        });
+      });
+    }
   }
+
+  document.addEventListener("click", function () { closeAllFilterDropdowns(); });
 
   // ==========================================================================
   // 렌더: 사이드바 목록
@@ -155,14 +341,31 @@
 
   function filteredEntries() {
     var q = state.searchQuery.trim().toLowerCase();
-    return state.entries
-      .filter(function (e) {
-        if (state.activeTagFilter && e.categoryIds.indexOf(state.activeTagFilter) === -1) return false;
-        if (!q) return true;
-        var hay = [e.fact, e.maeda, e.memo, methodName(e.methodId)].join(" ").toLowerCase();
-        return hay.indexOf(q) !== -1;
-      })
-      .sort(function (a, b) { return b.createdAt.localeCompare(a.createdAt) || (b.id > a.id ? 1 : -1); });
+    var f = state.filters;
+    var list = state.entries.filter(function (e) {
+      if (f.methodIds.length && f.methodIds.indexOf(e.methodId) === -1) return false;
+      if (f.categoryIds.length && !e.categoryIds.some(function (c) { return f.categoryIds.indexOf(c) !== -1; })) return false;
+      if (f.dateFrom && e.createdAt < f.dateFrom) return false;
+      if (f.dateTo && e.createdAt > f.dateTo) return false;
+      if (f.done.length) {
+        var wantDone = f.done.indexOf("done") !== -1;
+        var wantUndone = f.done.indexOf("undone") !== -1;
+        if (!((wantDone && e.done) || (wantUndone && !e.done))) return false;
+      }
+      if (!q) return true;
+      var hay = [e.fact, e.maeda, e.memo, methodName(e.methodId)].join(" ").toLowerCase();
+      return hay.indexOf(q) !== -1;
+    });
+
+    list.sort(function (a, b) {
+      var av, bv;
+      if (state.sort.key === "seq") { av = a.seq; bv = b.seq; }
+      else { av = a.createdAt + "_" + a.seq; bv = b.createdAt + "_" + b.seq; }
+      if (av < bv) return state.sort.dir === "asc" ? -1 : 1;
+      if (av > bv) return state.sort.dir === "asc" ? 1 : -1;
+      return 0;
+    });
+    return list;
   }
 
   function statusIconSvg(done) {
@@ -183,12 +386,12 @@
     elEntryList.innerHTML = list.map(function (e) {
       var sel = e.id === state.selectedId ? " selected" : "";
       var catTag = e.categoryIds.length
-        ? '<span class="entry-item-tag">' + escapeHtml(categoryName(e.categoryIds[0]).replace(/^\d+\.\s*/, "")) + (e.categoryIds.length > 1 ? " 외" : "") + "</span>"
+        ? '<span class="entry-item-tag">' + escapeHtml(categoryName(e.categoryIds[0])) + (e.categoryIds.length > 1 ? " 외" : "") + "</span>"
         : "";
       return '<div class="entry-item' + sel + '" data-id="' + e.id + '">' +
         statusIconSvg(e.done) +
         '<div class="entry-item-body">' +
-        '<div class="entry-item-title">' + escapeHtml(titleFromEntry(e)) + "</div>" +
+        '<div class="entry-item-title"><span class="entry-item-seq">#' + e.seq + "</span> " + escapeHtml(titleFromEntry(e)) + "</div>" +
         '<div class="entry-item-meta"><span>' + fmtDate(e.createdAt) + "</span>" + catTag + "</div>" +
         "</div></div>";
     }).join("");
@@ -207,7 +410,6 @@
   function renderEmpty() {
     state.mode = "empty";
     state.selectedId = null;
-    elTopbarTitle.textContent = "오늘 뭘 체크해볼까";
     var tpl = $("#tpl-empty").content.cloneNode(true);
     elContent.innerHTML = "";
     elContent.appendChild(tpl);
@@ -222,7 +424,6 @@
     state.mode = "quad";
     state.selectedId = null;
     draft = { methodId: null, categoryIds: [] };
-    elTopbarTitle.textContent = "오늘 뭘 체크해볼까";
 
     var tpl = $("#tpl-quad").content.cloneNode(true);
     elContent.innerHTML = "";
@@ -266,8 +467,10 @@
       if (!draft.methodId) { alert("방법론을 선택해주세요."); return; }
       if (!fact && !maeda) { alert("사실 또는 마에다화 중 최소 하나는 적어주세요."); return; }
 
+      var maxSeq = state.entries.reduce(function (m, e) { return Math.max(m, e.seq || 0); }, 0);
       var entry = {
         id: uid(),
+        seq: maxSeq + 1,
         methodId: draft.methodId,
         fact: fact,
         maeda: maeda,
@@ -349,12 +552,12 @@
     if (!entry) { renderEmpty(); return; }
     state.mode = "card";
     state.selectedId = id;
-    elTopbarTitle.textContent = titleFromEntry(entry);
 
     var tpl = $("#tpl-page-card").content.cloneNode(true);
     elContent.innerHTML = "";
     elContent.appendChild(tpl);
 
+    $("#cardSeq").textContent = "기록 #" + entry.seq;
     $("#cardMethodName").textContent = methodName(entry.methodId) + " · " + fmtDate(entry.createdAt);
     $("#cardTitle").textContent = titleFromEntry(entry);
     $("#cardDate").textContent = entry.createdAt;
@@ -478,7 +681,7 @@
         var byId = {};
         state.entries.forEach(function (e) { byId[e.id] = e; });
         incoming.forEach(function (e) { if (e && e.id) byId[e.id] = e; });
-        state.entries = Object.keys(byId).map(function (k) { return byId[k]; });
+        state.entries = migrateSeq(Object.keys(byId).map(function (k) { return byId[k]; }));
         saveEntries();
         renderEntryList();
         alert("복원 완료.");
@@ -529,9 +732,6 @@
     }, 150));
 
     $("#newEntryBtn").addEventListener("click", renderQuad);
-    $("#sidebarToggle").addEventListener("click", function () {
-      elSidebar.classList.toggle("collapsed");
-    });
 
     $("#exportBtn").addEventListener("click", exportData);
     $("#importBtn").addEventListener("click", function () { $("#importFile").click(); });
