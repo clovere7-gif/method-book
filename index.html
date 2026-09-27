@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>방법론 실험 노트</title>
+<meta name="description" content="7개 브레인스토밍 방법론을 체크하고 사업 아이템을 기록·축적하는 개인 노트">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#7A2E24">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app" id="app">
+
+  <!-- ================= 사이드바 ================= -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-title">
+        <svg class="seal-mini" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="9" fill="var(--wax)"/>
+          <path d="M12 7v10M7 12h10" stroke="#fff" stroke-width="1.3" opacity=".6"/>
+        </svg>
+        <span class="serif">실험 노트</span>
+      </div>
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="기록 검색...">
+      </div>
+      <div class="tag-filters" id="tagFilters"></div>
+    </div>
+
+    <div class="entry-list" id="entryList"></div>
+
+    <div class="sidebar-footer">
+      <button class="icon-btn" id="exportBtn" title="지금까지 기록을 파일로 저장">⭳ 백업</button>
+      <button class="icon-btn" id="importBtn" title="백업 파일 불러오기">⭱ 복원</button>
+      <input type="file" id="importFile" accept="application/json" hidden>
+    </div>
+
+    <div class="resize-handle" id="sidebarResize"></div>
+  </aside>
+
+  <!-- ================= 메인 ================= -->
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <button class="btn-ghost" id="sidebarToggle" title="사이드바 접기/펼치기">☰</button>
+        <span class="topbar-title" id="topbarTitle">오늘 뭘 체크해볼까</span>
+      </div>
+      <div class="topbar-actions">
+        <button class="theme-toggle" id="themeToggle" title="다크모드 전환"><span class="knob"></span></button>
+        <button class="btn btn-primary" id="newEntryBtn">+ 새 기록</button>
+      </div>
+    </div>
+
+    <div class="content" id="content">
+      <!-- 여기 입력모드(quad) 또는 완성카드(page-card) 또는 빈 상태가 렌더링됨 -->
+    </div>
+  </main>
+
+</div>
+
+<!-- ================= 템플릿: 4구역 입력 ================= -->
+<template id="tpl-quad">
+  <div class="quad-wrap">
+    <div class="quad-row" id="quadRowTop">
+      <div class="quad-col" id="colMethod">
+        <div class="quad-label"><span class="num">1</span>방법론 선택</div>
+        <div class="method-grid" id="methodGrid"></div>
+      </div>
+      <div class="resize-handle-v" data-resize="col1"></div>
+      <div class="quad-col" id="colFact">
+        <div class="quad-label"><span class="num">2</span>사실</div>
+        <textarea class="quad-input" id="inputFact" placeholder="방법론으로 관찰·발견한 구체적 내용을 그대로 적으세요"></textarea>
+        <div class="quad-hint">겪은 일, 본 것, 들은 것을 그대로</div>
+      </div>
+    </div>
+    <div class="resize-handle-h" data-resize="row1"></div>
+    <div class="quad-row" id="quadRowBottom">
+      <div class="quad-col" id="colMaeda">
+        <div class="quad-label"><span class="num">3</span>마에다화</div>
+        <textarea class="quad-input" id="inputMaeda" placeholder="그 사실에서 뽑은 일반 원리를 한 줄로"></textarea>
+        <div class="quad-hint">사실 → 원리 (다른 상황에도 적용 가능한 규칙)</div>
+      </div>
+      <div class="resize-handle-v" data-resize="col2"></div>
+      <div class="quad-col" id="colCategory">
+        <div class="quad-label"><span class="num">4</span>카테고리 선택</div>
+        <div class="category-grid" id="categoryGrid"></div>
+      </div>
+    </div>
+    <div class="quad-submit-row">
+      <button class="btn btn-secondary" id="cancelQuadBtn">취소</button>
+      <button class="btn btn-primary" id="submitQuadBtn">기록하기</button>
+    </div>
+  </div>
+</template>
+
+<!-- ================= 템플릿: 완성 카드 ================= -->
+<template id="tpl-page-card">
+  <div class="page-card">
+    <div class="bookmark-slot"></div>
+    <div class="seal-slot"></div>
+    <div class="page-card-header">
+      <div>
+        <div class="page-card-eyebrow" id="cardMethodName"></div>
+        <h2 class="page-card-title serif" id="cardTitle"></h2>
+      </div>
+      <div class="page-card-date" id="cardDate"></div>
+    </div>
+
+    <div class="field-block">
+      <div class="field-block-label">사실</div>
+      <div class="field-block-value" id="cardFact"></div>
+    </div>
+    <div class="field-block">
+      <div class="field-block-label">마에다화 (원리)</div>
+      <div class="field-block-value" id="cardMaeda"></div>
+    </div>
+    <div class="field-block">
+      <div class="field-block-label">카테고리</div>
+      <div class="tag-row" id="cardCategories"></div>
+    </div>
+    <div class="field-block">
+      <div class="field-block-label">자유메모</div>
+      <textarea class="memo-input" id="cardMemo" placeholder="언제든 이어서 적어두는 칸입니다"></textarea>
+    </div>
+
+    <div class="card-footer-row">
+      <label class="status-toggle">
+        <input type="checkbox" id="cardDoneToggle">
+        <span id="cardDoneLabel">실행결과를 스프레드시트로 옮겼다면 체크</span>
+      </label>
+      <button class="btn btn-secondary" id="deleteEntryBtn">이 기록 삭제</button>
+    </div>
+  </div>
+</template>
+
+<!-- ================= 템플릿: 빈 상태 ================= -->
+<template id="tpl-empty">
+  <div class="empty-state">
+    <h2 class="serif">아직 기록이 없습니다</h2>
+    <p>왼쪽 "+ 새 기록"을 눌러 오늘 방법론을 체크해보세요.</p>
+  </div>
+</template>
+
+<!-- ================= SVG 심볼: 책갈피 / 왁스인장 ================= -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="svg-bookmark" viewBox="0 0 100 160">
+      <path d="M8 0 H92 V150 L50 120 L8 150 Z"
+            fill="var(--bookmark)" stroke="var(--bookmark-dark)" stroke-width="3"/>
+      <path d="M8 0 H92 V150 L50 120 L8 150 Z"
+            fill="none" stroke="var(--bookmark-stitch)" stroke-width="2" stroke-dasharray="6 6" opacity=".8"
+            transform="scale(0.92) translate(4.3,4)"/>
+      <line x1="22" y1="30" x2="78" y2="86" stroke="var(--bookmark-stitch)" stroke-width="2" opacity=".55"/>
+      <line x1="78" y1="30" x2="22" y2="86" stroke="var(--bookmark-stitch)" stroke-width="2" opacity=".55"/>
+    </symbol>
+    <symbol id="svg-seal" viewBox="0 0 100 100">
+      <circle cx="50" cy="50" r="46" fill="var(--wax)"/>
+      <circle cx="50" cy="50" r="46" fill="none" stroke="var(--wax-dark)" stroke-width="2" opacity=".5"/>
+      <!-- 불규칙한 왁스 가장자리 -->
+      <path d="M50 4 C58 4 60 10 66 8 C74 6 78 14 82 18 C90 22 90 30 94 36
+               C96 44 90 48 92 56 C94 64 88 68 86 74 C82 82 74 80 70 86
+               C64 92 58 88 50 96 C42 88 36 92 30 86 C26 80 18 82 14 74
+               C12 68 6 64 8 56 C10 48 4 44 6 36 C10 30 10 22 18 18
+               C22 14 26 6 34 8 C40 10 42 4 50 4 Z"
+            fill="var(--wax)" opacity=".9"/>
+      <circle cx="50" cy="50" r="30" fill="none" stroke="var(--wax-light)" stroke-width="1.5" opacity=".6"/>
+      <text x="50" y="45" text-anchor="middle" font-family="Fraunces, Georgia, serif" font-size="13" font-weight="700" fill="var(--wax-light)">완료</text>
+      <text x="50" y="62" text-anchor="middle" font-family="Fraunces, Georgia, serif" font-size="9" fill="var(--wax-light)" opacity=".85">FIN</text>
+    </symbol>
+    <symbol id="svg-seal-mini" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="10" fill="var(--wax)"/>
+    </symbol>
+  </defs>
+</svg>
+
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "방법론 실험 노트",
+  "short_name": "실험노트",
+  "description": "7개 브레인스토밍 방법론을 체크하고 사업 아이템을 기록하는 개인 노트",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#EDEBE4",
+  "theme_color": "#7A2E24",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
