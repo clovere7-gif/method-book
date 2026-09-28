@@ -174,17 +174,17 @@
     var seqTotal = state.entries.length;
 
     elTagFilters.innerHTML =
+      renderFilterDropdown("done", "완료여부", filterButtonLabel("완료여부", state.filters.done.length, doneTotal), state.filters.done.length > 0) +
+      renderFilterDropdown("seq", "기록번호", filterButtonLabel("기록번호", state.filters.seqs.length, seqTotal), state.filters.seqs.length > 0) +
       renderFilterDropdown("method", "방법론", filterButtonLabel("방법론", state.filters.methodIds.length, methodTotal), state.filters.methodIds.length > 0) +
       renderFilterDropdown("category", "카테고리", filterButtonLabel("카테고리", state.filters.categoryIds.length, catTotal), state.filters.categoryIds.length > 0) +
-      renderFilterDropdown("date", "날짜", "날짜", !!(state.filters.dateFrom || state.filters.dateTo)) +
-      renderFilterDropdown("seq", "기록번호", filterButtonLabel("기록번호", state.filters.seqs.length, seqTotal), state.filters.seqs.length > 0) +
-      renderFilterDropdown("done", "완료여부", filterButtonLabel("완료여부", state.filters.done.length, doneTotal), state.filters.done.length > 0);
+      renderFilterDropdown("date", "날짜", "날짜", !!(state.filters.dateFrom || state.filters.dateTo));
 
+    setupFilterDropdown("done");
+    setupFilterDropdown("seq");
     setupFilterDropdown("method");
     setupFilterDropdown("category");
     setupFilterDropdown("date");
-    setupFilterDropdown("seq");
-    setupFilterDropdown("done");
   }
 
   function renderFilterDropdown(key, label, buttonLabel, active) {

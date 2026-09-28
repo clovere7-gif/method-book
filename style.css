@@ -169,9 +169,9 @@ h1, h2, h3, .serif {
 }
 
 .sidebar-title .cursive {
-  font-family: 'Dancing Script', cursive;
-  font-size: 32px;
-  font-weight: 700;
+  font-family: 'Great Vibes', cursive;
+  font-size: 40px;
+  font-weight: 400;
   color: var(--wax);
   line-height: 1;
 }
@@ -611,10 +611,11 @@ h1, h2, h3, .serif {
 }
 
 .method-grid {
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 6px;
   overflow-y: auto;
+  flex: 1;
 }
 .method-pill {
   text-align: left;
@@ -628,7 +629,9 @@ h1, h2, h3, .serif {
   color: var(--ink);
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 2px;
+  flex: 1;
 }
 .method-pill .m-name { font-weight: 600; }
 .method-pill .m-cycle { font-size: 10.5px; color: var(--ink-faint); }
@@ -666,6 +669,7 @@ textarea.quad-input:focus {
   flex-direction: column;
   gap: 6px;
   overflow-y: auto;
+  flex: 1;
 }
 .category-pill {
   text-align: left;
@@ -678,6 +682,10 @@ textarea.quad-input:focus {
   font-weight: 600;
   cursor: pointer;
   color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 1;
 }
 .category-pill.selected {
   background: var(--bookmark);
@@ -735,20 +743,20 @@ textarea.quad-input:focus {
 }
 
 .page-card-seq {
-  font-size: 24px;
+  font-size: 21px;
   font-weight: 700;
   color: var(--wax);
   margin-bottom: 4px;
 }
 .page-card-eyebrow {
-  font-size: 20px;
+  font-size: 18px;
   letter-spacing: .05em;
   text-transform: uppercase;
   color: var(--ink-faint);
   font-weight: 700;
 }
 .page-card-title {
-  font-size: 33px;
+  font-size: 29px;
   font-weight: 600;
   margin: 4px 0 0;
 }
@@ -763,7 +771,7 @@ textarea.quad-input:focus {
   margin-bottom: 18px;
 }
 .field-block-label {
-  font-size: 24px;
+  font-size: 21px;
   font-weight: 700;
   letter-spacing: .04em;
   text-transform: uppercase;
@@ -771,7 +779,7 @@ textarea.quad-input:focus {
   margin-bottom: 6px;
 }
 .field-block-value {
-  font-size: 17px;
+  font-size: 15px;
   line-height: 1.7;
   white-space: pre-wrap;
   color: var(--ink);
@@ -787,7 +795,7 @@ textarea.quad-input:focus {
   flex-wrap: wrap;
 }
 .tag-row .tag-chip {
-  font-size: 17px;
+  font-size: 15px;
 }
 
 textarea.memo-input {
@@ -806,6 +814,11 @@ textarea.memo-input {
 textarea.memo-input:focus {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
+}
+textarea.memo-input::placeholder {
+  font-family: 'Great Vibes', cursive;
+  font-size: 24px;
+  color: var(--ink-faint);
 }
 
 .card-footer-row {
@@ -849,7 +862,7 @@ textarea.memo-input:focus {
 
 .wax-seal {
   position: absolute;
-  top: -14px;
+  top: 40px;
   right: 20px;
   width: 52px;
   height: 52px;
