@@ -39,7 +39,8 @@
       categoryIds: [],   // 선택된 카테고리 id 목록 (빈 배열 = 전체)
       dateFrom: "",
       dateTo: "",
-      done: []          // ["done","undone"] 중 선택된 값들 (빈 배열 = 전체)
+      done: [],         // ["done","undone"] 중 선택된 값들 (빈 배열 = 전체)
+      seqs: []          // 선택된 기록번호(seq) 목록 (빈 배열 = 전체)
     },
     sort: { key: "createdAt", dir: "desc" }, // key: 'createdAt' | 'seq', dir: 'asc'|'desc'
     mode: "empty"       // 'empty' | 'quad' | 'card'
@@ -170,12 +171,13 @@
     var methodTotal = METHODS.length;
     var catTotal = CATEGORIES.length;
     var doneTotal = 2;
+    var seqTotal = state.entries.length;
 
     elTagFilters.innerHTML =
       renderFilterDropdown("method", "방법론", filterButtonLabel("방법론", state.filters.methodIds.length, methodTotal), state.filters.methodIds.length > 0) +
       renderFilterDropdown("category", "카테고리", filterButtonLabel("카테고리", state.filters.categoryIds.length, catTotal), state.filters.categoryIds.length > 0) +
       renderFilterDropdown("date", "날짜", "날짜", !!(state.filters.dateFrom || state.filters.dateTo)) +
-      renderFilterDropdown("seq", "기록번호", "기록번호↕", false) +
+      renderFilterDropdown("seq", "기록번호", filterButtonLabel("기록번호", state.filters.seqs.length, seqTotal), state.filters.seqs.length > 0) +
       renderFilterDropdown("done", "완료여부", filterButtonLabel("완료여부", state.filters.done.length, doneTotal), state.filters.done.length > 0);
 
     setupFilterDropdown("method");
@@ -227,10 +229,16 @@
     if (key === "seq") {
       var isAsc = state.sort.key === "seq" && state.sort.dir === "asc";
       var isDesc = state.sort.key === "seq" && state.sort.dir === "desc";
-      return '<div class="filter-sort-body">' +
+      var sortRow = '<div class="filter-sort-body">' +
         '<button type="button" class="filter-mini-btn' + (isAsc ? " active" : "") + '" data-sort-dir="asc">오름차순 (오래된순)</button>' +
         '<button type="button" class="filter-mini-btn' + (isDesc ? " active" : "") + '" data-sort-dir="desc">내림차순 (최근순)</button>' +
         "</div>";
+      var seqList = state.entries.slice().sort(function (a, b) { return (a.seq || 0) - (b.seq || 0); });
+      var checkRows = seqList.map(function (e) {
+        var checked = state.filters.seqs.indexOf(e.seq) !== -1;
+        return '<label class="filter-check-row"><input type="checkbox" data-fseq="' + e.seq + '"' + (checked ? " checked" : "") + '><span>#' + e.seq + "</span></label>";
+      }).join("");
+      return sortRow + '<div class="filter-seq-checklist">' + checkRows + "</div>" + filterPanelFooter("seq");
     }
     return "";
   }
@@ -256,12 +264,30 @@
     });
   }
 
+  function filterListKey(key) {
+    if (key === "method") return "methodIds";
+    if (key === "category") return "categoryIds";
+    if (key === "seq") return "seqs";
+    return "done";
+  }
+
   function bindFilterPanelEvents(key, panel) {
     $$("[data-fval]", panel).forEach(function (cb) {
       cb.addEventListener("change", function () {
         var val = cb.getAttribute("data-fval");
-        var listKey = key === "method" ? "methodIds" : key === "category" ? "categoryIds" : "done";
-        var list = state.filters[listKey];
+        var list = state.filters[filterListKey(key)];
+        var idx = list.indexOf(val);
+        if (cb.checked && idx === -1) list.push(val);
+        else if (!cb.checked && idx !== -1) list.splice(idx, 1);
+        renderTagFilters();
+        renderEntryList();
+      });
+    });
+
+    $$("[data-fseq]", panel).forEach(function (cb) {
+      cb.addEventListener("change", function () {
+        var val = parseInt(cb.getAttribute("data-fseq"), 10);
+        var list = state.filters.seqs;
         var idx = list.indexOf(val);
         if (cb.checked && idx === -1) list.push(val);
         else if (!cb.checked && idx !== -1) list.splice(idx, 1);
@@ -273,8 +299,7 @@
     var clearBtn = $("[data-fclear]", panel);
     if (clearBtn) {
       clearBtn.addEventListener("click", function () {
-        var listKey = key === "method" ? "methodIds" : key === "category" ? "categoryIds" : "done";
-        state.filters[listKey] = [];
+        state.filters[filterListKey(key)] = [];
         renderTagFilters();
         renderEntryList();
       });
@@ -345,6 +370,7 @@
     var list = state.entries.filter(function (e) {
       if (f.methodIds.length && f.methodIds.indexOf(e.methodId) === -1) return false;
       if (f.categoryIds.length && !e.categoryIds.some(function (c) { return f.categoryIds.indexOf(c) !== -1; })) return false;
+      if (f.seqs.length && f.seqs.indexOf(e.seq) === -1) return false;
       if (f.dateFrom && e.createdAt < f.dateFrom) return false;
       if (f.dateTo && e.createdAt > f.dateTo) return false;
       if (f.done.length) {
@@ -432,8 +458,7 @@
     var methodGrid = $("#methodGrid");
     methodGrid.innerHTML = METHODS.map(function (m) {
       return '<button class="method-pill" data-method="' + m.id + '">' +
-        '<span class="m-name">' + escapeHtml(m.name) + '</span>' +
-        '<span class="m-cycle">' + escapeHtml(m.cycle) + '</span></button>';
+        '<span class="m-name">' + escapeHtml(m.name) + '</span></button>';
     }).join("");
     $$("[data-method]", methodGrid).forEach(function (btn) {
       btn.addEventListener("click", function () {

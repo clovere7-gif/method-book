@@ -146,7 +146,7 @@ h1, h2, h3, .serif {
 /* --- 사이드바 --- */
 .sidebar {
   flex: 0 0 auto;
-  width: 300px;
+  width: 420px;
   min-width: 200px;
   max-width: 480px;
   background: var(--paper-deep);
@@ -265,7 +265,7 @@ h1, h2, h3, .serif {
   left: 0;
   min-width: 190px;
   max-width: 240px;
-  max-height: 260px;
+  max-height: 420px;
   overflow-y: auto;
   background: var(--paper-raised);
   border: 1px solid var(--line-strong);
@@ -324,6 +324,13 @@ h1, h2, h3, .serif {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+.filter-seq-checklist {
+  border-top: 1px solid var(--line);
+  margin-top: 8px;
+  padding-top: 6px;
+  max-height: 160px;
+  overflow-y: auto;
 }
 .filter-date-label {
   display: flex;
@@ -724,24 +731,24 @@ textarea.quad-input:focus {
   margin-bottom: 18px;
   gap: 12px;
   position: relative;
-  padding-right: 70px;
+  padding-right: 56px;
 }
 
 .page-card-seq {
-  font-size: 11px;
+  font-size: 24px;
   font-weight: 700;
   color: var(--wax);
   margin-bottom: 4px;
 }
 .page-card-eyebrow {
-  font-size: 11px;
+  font-size: 20px;
   letter-spacing: .05em;
   text-transform: uppercase;
   color: var(--ink-faint);
   font-weight: 700;
 }
 .page-card-title {
-  font-size: 22px;
+  font-size: 33px;
   font-weight: 600;
   margin: 4px 0 0;
 }
@@ -756,7 +763,7 @@ textarea.quad-input:focus {
   margin-bottom: 18px;
 }
 .field-block-label {
-  font-size: 11px;
+  font-size: 24px;
   font-weight: 700;
   letter-spacing: .04em;
   text-transform: uppercase;
@@ -764,7 +771,7 @@ textarea.quad-input:focus {
   margin-bottom: 6px;
 }
 .field-block-value {
-  font-size: 14px;
+  font-size: 17px;
   line-height: 1.7;
   white-space: pre-wrap;
   color: var(--ink);
@@ -779,10 +786,13 @@ textarea.quad-input:focus {
   gap: 6px;
   flex-wrap: wrap;
 }
+.tag-row .tag-chip {
+  font-size: 17px;
+}
 
 textarea.memo-input {
   width: 100%;
-  min-height: 90px;
+  min-height: 225px;
   resize: vertical;
   border: 1px dashed var(--line-strong);
   border-radius: var(--radius-s);
@@ -824,10 +834,10 @@ textarea.memo-input:focus {
 
 .bookmark {
   position: absolute;
-  top: 50px;
-  right: 28px;
-  width: 24px;
-  height: 38px;
+  top: -14px;
+  right: 24px;
+  width: 36px;
+  height: 57px;
   z-index: 2;
   filter: drop-shadow(0 3px 4px var(--shadow));
 }
@@ -839,8 +849,8 @@ textarea.memo-input:focus {
 
 .wax-seal {
   position: absolute;
-  top: 56px;
-  right: 22px;
+  top: -14px;
+  right: 20px;
   width: 52px;
   height: 52px;
   z-index: 2;
