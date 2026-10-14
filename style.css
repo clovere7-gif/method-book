@@ -628,19 +628,25 @@ h1, h2, h3, .serif {
   cursor: pointer;
   color: var(--ink);
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 2px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
   flex: 1;
 }
-.method-pill .m-name { font-weight: 600; }
-.method-pill .m-cycle { font-size: 10.5px; color: var(--ink-faint); }
+.method-pill .m-name { font-weight: 600; flex: none; }
+.method-pill .m-desc {
+  font-size: 10.5px;
+  font-weight: 400;
+  color: var(--ink-faint);
+  min-width: 0;
+}
 .method-pill.selected {
   background: var(--accent);
   border-color: var(--accent);
   color: #fff;
 }
-.method-pill.selected .m-cycle { color: rgba(255,255,255,.75); }
+.method-pill.selected .m-desc { color: rgba(255,255,255,.8); }
 
 textarea.quad-input {
   flex: 1;

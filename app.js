@@ -6,13 +6,13 @@
   // ==========================================================================
 
   var METHODS = [
-    { id: "friction", name: "마찰 기록법", cycle: "상시 인박스" },
-    { id: "jtbd", name: "JTBD (Jobs-to-be-Done)", cycle: "매일 직접선택" },
-    { id: "doppelganger", name: "도플갱어", cycle: "매일 직접선택" },
-    { id: "trend", name: "트렌드 분석", cycle: "주간" },
-    { id: "scamper", name: "SCAMPER", cycle: "매일 직접선택" },
-    { id: "simplify", name: "단순화 접근", cycle: "매일 직접선택" },
-    { id: "popularize", name: "대중화 접근", cycle: "매일 직접선택" }
+    { id: "friction", name: "마찰 기록법", desc: "일상의 불편·번거로움을 그때그때 기록" },
+    { id: "jtbd", name: "JTBD (Jobs-to-be-Done)", desc: "사람들이 제품을 '고용'해 해결하려는 일 찾기" },
+    { id: "doppelganger", name: "도플갱어", desc: "이미 성공한 비슷한 사업을 찾아 내 상황에 적용" },
+    { id: "trend", name: "트렌드 분석", desc: "뜨는 흐름과 변화에서 기회 찾기" },
+    { id: "scamper", name: "SCAMPER", desc: "대체·결합·적용·수정·용도변경·제거·재배열" },
+    { id: "simplify", name: "단순화 접근", desc: "복잡한 것의 단계·기능을 줄여 쉽게 만들기" },
+    { id: "popularize", name: "대중화 접근", desc: "전문가용·고가인 것을 일반인도 쓰게 만들기" }
   ];
 
   var CATEGORIES = [
@@ -458,7 +458,8 @@
     var methodGrid = $("#methodGrid");
     methodGrid.innerHTML = METHODS.map(function (m) {
       return '<button class="method-pill" data-method="' + m.id + '">' +
-        '<span class="m-name">' + escapeHtml(m.name) + '</span></button>';
+        '<span class="m-name">' + escapeHtml(m.name) + '</span>' +
+        '<span class="m-desc">' + escapeHtml(m.desc) + '</span></button>';
     }).join("");
     $$("[data-method]", methodGrid).forEach(function (btn) {
       btn.addEventListener("click", function () {
