@@ -619,12 +619,112 @@
       renderBookmarkOrSeal(entry);
     });
 
-    $("#deleteEntryBtn").addEventListener("click", function () {
+    var delBtn = $("#deleteEntryBtn");
+    delBtn.addEventListener("click", function () {
       if (!confirm("이 기록을 삭제할까요? 되돌릴 수 없습니다.")) return;
       state.entries = state.entries.filter(function (e) { return e.id !== id; });
       saveEntries();
       renderEntryList();
       state.entries.length ? openCard(state.entries[0].id) : renderEmpty();
+    });
+
+    // ----- 수정 모드 (버튼은 JS로 삽입: index.html 변경 불필요) -----
+    var actions = document.createElement("div");
+    actions.className = "card-actions";
+    delBtn.parentNode.replaceChild(actions, delBtn);
+
+    var editBtn = document.createElement("button");
+    editBtn.className = "btn btn-secondary";
+    editBtn.id = "editEntryBtn";
+    editBtn.textContent = "수정";
+
+    var saveBtn = document.createElement("button");
+    saveBtn.className = "btn btn-primary";
+    saveBtn.id = "saveEditBtn";
+    saveBtn.textContent = "저장";
+    saveBtn.hidden = true;
+
+    var cancelBtn = document.createElement("button");
+    cancelBtn.className = "btn btn-secondary";
+    cancelBtn.id = "cancelEditBtn";
+    cancelBtn.textContent = "취소";
+    cancelBtn.hidden = true;
+
+    actions.appendChild(editBtn);
+    actions.appendChild(saveBtn);
+    actions.appendChild(cancelBtn);
+    actions.appendChild(delBtn);
+
+    editBtn.addEventListener("click", function () {
+      var eMethod = entry.methodId;
+      var eCats = entry.categoryIds.slice();
+
+      editBtn.hidden = true;
+      delBtn.hidden = true;
+      saveBtn.hidden = false;
+      cancelBtn.hidden = false;
+
+      // 방법론: 이름 줄을 선택 가능한 칩으로 교체
+      var eyebrow = $("#cardMethodName");
+      eyebrow.hidden = true;
+      var methodRow = document.createElement("div");
+      methodRow.className = "tag-row edit-method-row";
+      methodRow.innerHTML = METHODS.map(function (m) {
+        return '<button type="button" class="tag-chip' + (m.id === eMethod ? " active" : "") +
+          '" data-emethod="' + m.id + '">' + escapeHtml(m.name) + "</button>";
+      }).join("");
+      eyebrow.parentNode.insertBefore(methodRow, eyebrow.nextSibling);
+      $$("[data-emethod]", methodRow).forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          eMethod = btn.getAttribute("data-emethod");
+          $$("[data-emethod]", methodRow).forEach(function (b) { b.classList.remove("active"); });
+          btn.classList.add("active");
+        });
+      });
+
+      // 사실 / 마에다화: 입력칸으로 교체
+      function swapToTextarea(el, value) {
+        var ta = document.createElement("textarea");
+        ta.className = "edit-input";
+        ta.value = value || "";
+        el.hidden = true;
+        el.parentNode.insertBefore(ta, el.nextSibling);
+        return ta;
+      }
+      var factTa = swapToTextarea(factEl, entry.fact);
+      var maedaTa = swapToTextarea(maedaEl, entry.maeda);
+
+      // 카테고리: 전체 목록을 토글 칩으로
+      catWrap.innerHTML = CATEGORIES.map(function (c) {
+        return '<button type="button" class="tag-chip' + (eCats.indexOf(c.id) !== -1 ? " active" : "") +
+          '" data-ecat="' + c.id + '">' + escapeHtml(c.name) + "</button>";
+      }).join("");
+      $$("[data-ecat]", catWrap).forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var cid = btn.getAttribute("data-ecat");
+          var i = eCats.indexOf(cid);
+          if (i === -1) { eCats.push(cid); btn.classList.add("active"); }
+          else { eCats.splice(i, 1); btn.classList.remove("active"); }
+        });
+      });
+
+      cancelBtn.onclick = function () { openCard(id); };
+
+      saveBtn.onclick = function () {
+        var fact = factTa.value.trim();
+        var maeda = maedaTa.value.trim();
+        if (!fact && !maeda) { alert("사실 또는 마에다화 중 최소 하나는 적어주세요."); return; }
+        entry.methodId = eMethod;
+        entry.fact = fact;
+        entry.maeda = maeda;
+        // 카테고리는 원래 정의 순서대로 정렬해 저장
+        entry.categoryIds = CATEGORIES.map(function (c) { return c.id; })
+          .filter(function (cid) { return eCats.indexOf(cid) !== -1; });
+        saveEntries();
+        openCard(id);
+      };
+
+      factTa.focus();
     });
 
     renderBookmarkOrSeal(entry);

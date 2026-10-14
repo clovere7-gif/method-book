@@ -827,6 +827,39 @@ textarea.memo-input::placeholder {
   color: var(--ink-faint);
 }
 
+.card-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.card-actions [hidden] { display: none; }
+
+.edit-method-row {
+  margin: 8px 0 10px;
+}
+.edit-method-row .tag-chip {
+  font-size: 13px;
+}
+
+textarea.edit-input {
+  width: 100%;
+  min-height: 96px;
+  resize: vertical;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-s);
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 1.7;
+  background: var(--paper);
+  color: var(--ink);
+}
+textarea.edit-input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.field-block [hidden], .page-card-header [hidden] { display: none; }
+
 .card-footer-row {
   display: flex;
   justify-content: space-between;
